@@ -4,11 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebApiDemo {
     public class StaffContext : DbContext {
-        public DbSet<Emp> Emp { get; set; } //@fixme
-        public virtual DbSet<Emp> Emps { get; set; } //@fixme
-
+        public DbSet<Emp> Emp { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("DataSource=/home/qa/_dotnet/WebApiDemo/db/sqldb;");
+            => options.UseSqlite("DataSource=./db/sqldb;");
     }
 
     public class Comp {
@@ -33,12 +31,12 @@ namespace WebApiDemo {
         [Column("phone"), Required]
         public string Phone { get; set; }
 
-        [Column("compid"), ForeignKey("Comp")]
+        [Column("compid"), ForeignKey("Comp"), Required]
         public int Compid { get; set; }
         public virtual Comp Comp { get; set; }
         
-        [Column("passportid"), ForeignKey("Passport")]
-        public int Passportid { get; set; } = 1;
+        [Column("passportid"), ForeignKey("Passport"), Required]
+        public int Passportid { get; set; }
         public virtual Passport Passport { get; set; }
     }
     

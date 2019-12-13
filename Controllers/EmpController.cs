@@ -2,90 +2,93 @@
 using System.Collections.Specialized;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace WebApiDemo.Controllers {
     [ApiController]
     [Route("[controller]")]
     public class EmpController : ControllerBase {
-        private readonly ILogger<EmpController> _logger;
+        private StaffContext _dbContext;
 
-        public EmpController(ILogger<EmpController> logger) {
-            _logger = logger;
-        }
-        
-        [HttpGet("{id}")]
-        public Emp Get(string id) {
-            var db = new StaffContext();
-            var emp = db.Emp.Find( int.Parse(id) );
-            if (emp == null) {
-                emp = new Emp();
-            }
-            return emp;
+        public EmpController() {
+            _dbContext = new StaffContext();
         }
 
-        [HttpGet]
-        public IEnumerable<Emp> Get() {
-            var staffContext = new StaffContext();
-            return staffContext.Emp.ToArray();
-        }
-        
+        //[HttpGet("{id}")]
+        //public ActionResult Get(string id) {
+        //    object emp = _dbContext.Emp.Find( int.Parse(id) );
+        //    return emp == null ? new ObjectResult(NotFound( int.Parse(id))) : new ObjectResult(Ok(emp));
+        //}
+
+        //[HttpGet]
+        //public IEnumerable<Emp> Get() {
+        //    return _dbContext.Emp.ToArray();
+        //}
+
         [HttpPost]
         public ActionResult Post([FromBody] Emp value) {
-            var staffContext = new StaffContext();
-            var entity = new Emp {
+            if (value.Compid == 0) {
+                OrderedDictionary keyWValue = new OrderedDictionary();
+                keyWValue.Add("id", null);
+                keyWValue.Add("result", "not exist value for `Compid` field");
+                return new ObjectResult(BadRequest(keyWValue));
+            }
+
+            if (value.Passportid == 0) {
+                OrderedDictionary keyWValue = new OrderedDictionary();
+                keyWValue.Add("id", null);
+                keyWValue.Add("result", "not exist value for `Passportid` field");
+                return new ObjectResult(BadRequest(keyWValue));
+            }
+
+            Emp entity = new Emp {
                 Name = value.Name,
+                SurName = value.SurName,
                 Phone = value.Phone,
-                Compid = value.Compid
-                //...@todo determine newOrExist fields
+                Compid = value.Compid,
+                Passportid = value.Passportid
             };
-            staffContext.Add(entity);
-            staffContext.SaveChanges();
-        
-            OrderedDictionary keyWithValue = new OrderedDictionary();
-            keyWithValue.Add("id", entity.Id);
-            return Ok(keyWithValue);
+            _dbContext.Add(entity);
+            _dbContext.SaveChanges();
+
+            return new ObjectResult(Ok(new OrderedDictionary {{"id", entity.Id}}));
         }
 
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] Emp value) {
-            var staffContext = new StaffContext();
-            var emp = staffContext.Emp.Find(id);
+        public ActionResult Put(string id, [FromBody] Emp value) {
+            Emp emp = _dbContext.Emp.Find(int.Parse(id));
 
             if (emp == null) {
-                emp = new Emp();
+                return new ObjectResult(NotFound(int.Parse(id)));
             }
 
-            // ...
             if (emp.Name != value.Name) {
                 emp.Name = value.Name;
+            }
+            if (emp.SurName != value.SurName) {
+                emp.SurName = value.SurName;
             }
             if (emp.Phone != value.Phone) {
                 emp.Phone = value.Phone;
             }
             
-            staffContext.SaveChanges();
-            return new ObjectResult(emp);
+            _dbContext.SaveChanges();
+            return new ObjectResult(Ok(emp));
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id) {
-            var staffContext = new StaffContext();
-            var emp = staffContext.Emp.Find(id);
+        public ActionResult Delete(string id) {
+            Emp emp = _dbContext.Emp.Find(int.Parse(id));
 
-            var flag = (emp == null);
-            if (flag) {
-                emp = new Emp();
-            } else {
-                staffContext.Remove(emp);
-                //await db.SaveChangesAsync();
-                staffContext.SaveChanges();
+            if (emp == null) {
+                return new ObjectResult(NotFound(int.Parse(id)));
             }
+            _dbContext.Remove(emp);
+            _dbContext.SaveChanges();
 
-            return Ok(new OrderedDictionary {
+            return new ObjectResult(Ok(new OrderedDictionary {
                 {"id", id.ToString()},
-                {"result", flag ? "the employee does not found" : "the employee was deleted"}
-            });
+                {"result", "the employee remove done"}
+            }));
         }
     }
 }
